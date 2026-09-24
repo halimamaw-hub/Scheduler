@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Schedule &mdash; Week of {{ week.start_date.strftime('%b %d, %Y') }}</h1>
+<p><a href="{{ url_for('edit_week', week_id=week.id) }}">← Edit this week</a></p>
+
+<div class="legend">
+  <span><span class="swatch block"></span> Class</span>
+  <span><span class="swatch break"></span> 15-min break</span>
+</div>
+
+<div class="day-grid wide">
+  {% for i, d in enumerate(DAYS) %}
+  <div class="day-col">
+    <h3>{{ d }}</h3>
+
+    {% if not timeline_by_day[i] %}
+      <p class="muted small">Nothing scheduled</p>
+    {% endif %}
+    {% for item in timeline_by_day[i] %}
+      {% if item.kind == 'class' %}
+        <div class="block classblock">
+          {{ item.start.strftime('%-I:%M %p') }}–{{ item.end.strftime('%-I:%M %p') }}<br>
+          <strong>{{ item.subject.name }}</strong> (class){% if item.note %} — {{ item.note }}{% endif %}
+        </div>
+      {% else %}
+        <div class="block studyblock" style="border-left-color:{{ item.subject.color }}">
+          {{ item.start.strftime('%-I:%M %p') }}–{{ item.end.strftime('%-I:%M %p') }}<br>
+          <span class="swatch" style="background:{{ item.subject.color }}"></span>
+          <strong>{{ item.subject.name }}</strong> (study)
+        </div>
+        <div class="block breakblock">15 min break</div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

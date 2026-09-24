@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Week of {{ week.start_date.strftime('%b %d, %Y') }}</h1>
+<p><a href="{{ url_for('view_week', week_id=week.id) }}">→ View generated schedule</a></p>
+
+<section class="panel">
+  <h2>1. Available hours &amp; limits</h2>
+  <form method="post" class="row-form">
+    <input type="hidden" name="form_type" value="settings">
+    <label>Free from <input type="time" name="day_start" value="{{ week.day_start.strftime('%H:%M') }}"></label>
+    <label>Free until <input type="time" name="day_end" value="{{ week.day_end.strftime('%H:%M') }}"></label>
+    <label>Max hrs/subject/day
+      <input type="number" step="0.5" min="0.5" name="max_hours_per_day" value="{{ week.max_hours_per_day }}">
+    </label>
+    <button type="submit" class="btn">Save</button>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>2. Class sessions this week (blocks off study time)</h2>
+  <p class="hint">Add every lecture/recitation for THIS week, including any make-up
+  classes moved to a different day. These hours are unavailable for studying.</p>
+
+  <form method="post" class="row-form">
+    <input type="hidden" name="form_type" value="session">
+    <select name="subject_id" required>
+      {% for s in subjects %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+    </select>
+    <select name="day_of_week" required>
+      {% for i, d in enumerate(DAYS) %}<option value="{{ i }}">{{ d }}</option>{% endfor %}
+    </select>
+    <input type="time" name="start_time" required>
+    <input type="time" name="end_time" required>
+    <input type="text" name="note" placeholder="e.g. make-up class">
+    <button type="submit" class="btn">Add session</button>
+  </form>
+
+  <div class="day-grid">
+    {% for i, d in enumerate(DAYS) %}
+    <div class="day-col">
+      <h3>{{ d }}</h3>
+      {% for sess in sessions_by_day[i] %}
+        <div class="chip">
+          <span class="swatch" style="background:{{ sess.subject.color }}"></span>
+          {{ sess.subject.name }} {{ sess.start_time.strftime('%-I:%M %p') }}–{{ sess.end_time.strftime('%-I:%M %p') }}
+          {% if sess.note %}<em>({{ sess.note }})</em>{% endif %}
+          <form method="post" action="{{ url_for('delete_session', week_id=week.id, sess_id=sess.id) }}" class="inline-form">
+            <button type="submit" class="x-btn" title="remove">×</button>
+          </form>
+        </div>
+      {% else %}
+        <p class="muted small">No classes</p>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel">
+  <h2>3. Study hours needed this week</h2>
+  <p class="hint">Defaults to units × 3. Override any subject for this week only
+  (e.g. bump it up before an exam).</p>
+  <table class="table">
+    <thead><tr><th>Subject</th><th>Default</th><th>This week</th><th>Override</th></tr></thead>
+    <tbody>
+      {% for s in subjects %}
+      <tr>
+        <td><span class="swatch" style="background:{{ s.color }}"></span> {{ s.name }}</td>
+        <td>{{ (s.units * 3) | round(1) }}h</td>
+        <td><strong>{{ required[s.id] | round(1) }}h</strong></td>
+        <td>
+          <form method="post" class="inline-form">
+            <input type="hidden" name="form_type" value="override">
+            <input type="hidden" name="subject_id" value="{{ s.id }}">
+            <input type="number" step="0.5" min="0" name="hours" value="{{ overrides.get(s.id, s.units*3) }}" style="width:5em">
+            <button type="submit" class="btn small">Set</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<form method="post" action="{{ url_for('generate', week_id=week.id) }}" class="inline-form">
+  <button type="submit" class="btn primary large">Generate study schedule →</button>
+</form>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Subjects</h1>
+<p class="hint">Each unit = 3 study hours/week by default. You can still override
+hours per subject per week when planning a week (e.g. more hours before an exam).</p>
+
+<form method="post" class="card-form">
+  <label>Name <input type="text" name="name" required placeholder="Torts"></label>
+  <label>Units <input type="number" step="0.5" min="0.5" name="units" required value="1.5"></label>
+  <label>Color <input type="color" name="color" value="#4f46e5"></label>
+  <button type="submit" class="btn primary">Add subject</button>
+</form>
+
+<table class="table">
+  <thead><tr><th>Subject</th><th>Units</th><th>Default hrs/week</th><th></th></tr></thead>
+  <tbody>
+    {% for s in subjects %}
+    <tr>
+      <td><span class="swatch" style="background:{{ s.color }}"></span> {{ s.name }}</td>
+      <td>{{ s.units }}</td>
+      <td>{{ (s.units * 3) | round(1) }}h</td>
+      <td>
+        <form method="post" action="{{ url_for('delete_subject', sid=s.id) }}"
+              onsubmit="return confirm('Delete {{ s.name }}? This removes it from all weeks.');" class="inline-form">
+          <button type="submit" class="btn danger small">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
